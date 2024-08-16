@@ -1,0 +1,69 @@
+
+import numpy as np 
+import pandas as pd
+import matplotlib.pyplot as plt
+import glob
+import os
+
+#Benfords graph:
+benfords = {}
+for d in range(1,10):
+    valuefor_d = np.log10(1 + 1/d)
+    benfords[d] = valuefor_d
+plt.bar(benfords.keys(),benfords.values()) 
+
+
+#Intial Digits extraction:
+def digit_percentage_calu(fdata):
+    intial_digits =[]
+    for x in fdata:
+        intial_digit = [str(x).lstrip('-')[0]]
+        intial_digits.append(intial_digit)
+        y = np.array(intial_digits) #converting list to array for calculation 
+        s = y.flatten().astype(int) #2D array coverted to 1D array, type changed to integer 
+        a = np.sort(s) #array is sorted in ascending order
+    return a
+      
+#Counting the no. of each digit
+def initial_digit_frequencies(fdata):
+    digit_counts = {}
+
+    for digit in digit_percentage_calu(fdata):
+        if digit in digit_counts:
+            digit_counts[digit] += 1
+        else:
+            digit_counts[digit] = 1
+            
+    #converting the frequency to Percentage:
+    digit_percentage = {}
+    total_length = len(fdata)
+
+    digit_percentage={
+        digit: (count/total_length) for digit, count in digit_counts.items()
+        }
+    keys = []
+    values = []
+    keys =  list(digit_percentage.keys())
+    values = list(digit_percentage.values())
+
+
+    return keys, values
+
+#Plotting the graphs:
+for i in range(0,6):
+    data = pd.read_csv('cumulative.csv')
+    fdata = data.iloc[i].tolist()     
+    print(fdata)
+    benfords = {}
+    for d in range(1,10):
+        valuefor_d = np.log10(1 + 1/d)
+        benfords[d] = valuefor_d
+        plt.bar(benfords.keys(),benfords.values())
+    keys, values = initial_digit_frequencies(fdata)
+    print("Keys (Digits):", keys)
+    print("Values (Percentages):", values)
+    plt.plot(keys, values,marker = 'o')
+    plt.title("Distribution of First Digits in Data")
+    plt.xlabel('Digit')
+    plt.ylabel('Proportion')
+    plt.show()
