@@ -1,0 +1,121 @@
+
+import pandas as pd
+import numpy as np
+import numpy_financial as npf
+import matplotlib.pyplot as plt
+
+# Read the CSV file
+df = pd.read_csv('rdata.csv')
+
+# Convert the 'Date' column to datetime format
+df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+
+sswp_monthly_cashflow = []
+sswp_irr = []
+sswp_residual = []
+dswp_monthly_cashflow = []
+dswp_irr = []
+dswp_residual = []
+
+for z in range(3943):
+    returns = []
+    principle = 10000000
+    residual_corpus = principle
+    
+    # Loop through the monthly data to calculate returns and residual corpus
+    for i in range(0+z,3650+z,30):
+        principle_monthEnd = principle * (df['Nifty Value'][i + 30] / df['Nifty Value'][i])
+        monthly_return = 0.005 * principle_monthEnd
+        returns.append(monthly_return)
+        principle = principle_monthEnd - monthly_return
+        residual_corpus = principle
+        #sswp_monthly_cashflow.append(monthly_returns)
+
+    # Print the final residual corpus
+    #print("residual corpus:", residual_corpus)
+
+    total_return = 0
+    for i in range(0,120):
+        total_return += returns[i]
+
+    #print("returns:", total_return)
+
+    returns.insert(0,-10000000)
+    irr = npf.irr(returns)
+    #print("irr of this investment is:", irr)
+    #print("........................")
+    
+
+
+
+    dprincipal = 10000000
+    dresidual_amount = dprincipal
+    dreturns = []
+
+    for i in range(0+z,3650+z,30):
+        dprincipal_monthend = dprincipal*((df['Nifty Value'][i+30])/(df['Nifty Value'][i]))
+        if df['PE Ratio'][i+30]<18:
+            dmonthly_returns= 0.0025*dprincipal_monthend
+        elif df['PE Ratio'][i+30] >=18 and df['PE Ratio'][i+1] <24:
+            dmonthly_returns= 0.005*dprincipal_monthend
+        else:
+            dmonthly_returns = 0.075*dprincipal_monthend
+
+        dreturns.append(dmonthly_returns)
+        dprincipal = dprincipal_monthend - dmonthly_returns
+        dresidual_amount = dprincipal
+
+    arr = np.array(dreturns)
+    total_dreturns = np.sum(arr)
+
+
+    dreturns.insert(0,-10000000)
+    dirr = npf.irr(dreturns)
+    
+    z= z+1
+    sswp_monthly_cashflow.append(total_return)
+    sswp_irr.append(irr)
+    sswp_residual.append(residual_corpus)
+    dswp_monthly_cashflow.append(total_dreturns)
+    dswp_irr.append(dirr)
+    dswp_residual.append(dresidual_amount)
+
+
+xpoints = []
+
+for d in range(3943):
+    Dateoftheday = df['Date'][d]
+    xpoints.append(Dateoftheday)
+
+ypoints = sswp_irr
+
+plt.title("Rolling return profile of SSWP")
+plt.xlabel("Time")
+plt.ylabel("IRR_SSWP")
+plt.plot(xpoints,ypoints)
+plt.show()
+
+
+plt.title("Rolling return profile of DSWP")
+plt.xlabel("Time")
+plt.ylabel("IRR_DSWP")
+dypoints = dswp_irr
+plt.plot(xpoints,dypoints)
+plt.show()
+
+
+total_sswp = []
+for i in range(0, len(sswp_monthly_cashflow)):
+    total_sswp.append(sswp_monthly_cashflow[i] + sswp_residual[i])
+    
+total_dswp = []
+for i in range(0, len(dswp_monthly_cashflow)):
+    total_dswp.append(dswp_monthly_cashflow[i]+ dswp_residual[i])
+
+plt.title("sswp vs dswp")
+plt.xlabel("Time")
+plt.ylabel("Amount(in Cr)")
+plt.plot(xpoints,total_sswp, color = 'blue', label = 'SSWP')
+plt.plot(xpoints,total_dswp, color = 'hotpink', label = 'DSWP')
+plt.legend()
+plt.show()
